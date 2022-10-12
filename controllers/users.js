@@ -6,6 +6,14 @@ const { NotFoundError } = require('../errors/NotFoundError');
 const { BadRequestError } = require('../errors/BadRequestError');
 const { ConflictError } = require('../errors/ConflictError');
 const { UnauthorizedError } = require('../errors/UnauthorizedError');
+const {
+  ConflictErrorMessage,
+  ValidationErrorMessage,
+  CredentialsErrorMessage,
+  LogoutMessage,
+  NotFoundUserErrorMessage,
+  BadRequestErrorMessage,
+} = require('../utils/messages');
 
 const {
   OK,
@@ -28,41 +36,40 @@ const createUser = async (req, res, next) => {
     return res.status(CREATED).send(user);
   } catch (err) {
     if (err.code === 11000) {
-      return next(new ConflictError('Пользователь с таким email уже существует'));
+      return next(new ConflictError(ConflictErrorMessage));
     }
     if (err.name === 'ValidationError') {
-      return next(new BadRequestError('Введены некорректные данные'));
+      return next(new BadRequestError(ValidationErrorMessage));
     }
     return next(err);
   }
 };
 
 const login = async (req, res, next) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email }).select('+password');
-  if (!user) {
-    return next(new UnauthorizedError('Неправильные почта или пароль'));
-  }
-  const isMatched = await bcrypt.compare(password, user.password);
-  if (!isMatched) {
-    return next(new UnauthorizedError('Неправильные почта или пароль'));
-  }
-  const token = await jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET : 'secret');
-  await res.cookie('jwt', token, {
-    maxAge: 360000 * 24 * 7,
-    httpOnly: true,
-    sameSite: 'none',
-  });
-  return res.send(user);
-};
-
-const logout = async (req, res, next) => {
   try {
-    await res.clearCookie('jwt');
-    return res.status(OK).send({ message: 'Сессия завершена' });
+    const { email, password } = req.body;
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) {
+      return next(new UnauthorizedError(CredentialsErrorMessage));
+    }
+    const isMatched = await bcrypt.compare(password, user.password);
+    if (!isMatched) {
+      return next(new UnauthorizedError(CredentialsErrorMessage));
+    }
+    const token = await jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET : 'secret');
+    await res.cookie('jwt', token, {
+      maxAge: 360000 * 24 * 7,
+      httpOnly: true,
+      sameSite: 'none',
+    });
+    return res.send(user);
   } catch (err) {
     return next(err);
   }
+};
+
+const logout = (req, res) => {
+  res.clearCookie('jwt').send({ message: LogoutMessage });
 };
 
 const getCurrentUser = async (req, res, next) => {
@@ -86,13 +93,13 @@ const updateUserProfile = async (req, res, next) => {
     if (user) {
       return res.status(OK).send(user);
     }
-    return next(new NotFoundError('Пользователь не найден'));
+    return next(new NotFoundError(NotFoundUserErrorMessage));
   } catch (err) {
     if (err.name === 'CastError' || err.name === 'ValidationError') {
-      return next(new BadRequestError('Неверный запрос`'));
+      return next(new BadRequestError(BadRequestErrorMessage));
     }
     if (err.code === 11000) {
-      return next(new ConflictError('Пользователь с таким email уже существует'));
+      return next(new ConflictError(ConflictErrorMessage));
     }
     return next(err);
   }

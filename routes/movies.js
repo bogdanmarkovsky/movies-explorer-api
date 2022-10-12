@@ -1,6 +1,7 @@
 const express = require('express');
 const { celebrate, Joi } = require('celebrate');
 const { validateUrl } = require('../utils/validateUrl');
+const { validateInt } = require('../utils/validateInt');
 
 const {
   getMovies,
@@ -16,14 +17,14 @@ movieRoutes.post('/', celebrate({
     country: Joi.string().required(),
     director: Joi.string().required(),
     duration: Joi.number().required(),
-    year: Joi.number().required(),
+    year: Joi.string().required().custom(validateInt),
     description: Joi.string().required(),
-    image: Joi.string().required(),
+    image: Joi.string().required().custom(validateUrl),
     trailerLink: Joi.string().required().custom(validateUrl),
     thumbnail: Joi.string().required().custom(validateUrl),
     nameRU: Joi.string().required(),
     nameEN: Joi.string().required(),
-    movieId: Joi.string().required(),
+    movieId: Joi.string().required().custom(validateInt),
   }),
 }), addMovie);
 movieRoutes.delete('/:id', celebrate({

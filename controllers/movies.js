@@ -2,6 +2,12 @@ const Movie = require('../models/movies');
 const { NotFoundError } = require('../errors/NotFoundError');
 const { BadRequestError } = require('../errors/BadRequestError');
 const { ForbiddenError } = require('../errors/ForbiddenError');
+const {
+  ValidationErrorMessage,
+  ForbiddenErrorMessage,
+  NotFoundMovieErrorMessage,
+  BadRequestErrorMessage,
+} = require('../utils/messages');
 
 const {
   OK,
@@ -21,37 +27,11 @@ const getMovies = async (req, res, next) => {
 
 const addMovie = async (req, res, next) => {
   try {
-    const {
-      country,
-      director,
-      duration,
-      year,
-      description,
-      image,
-      trailerLink,
-      thumbnail,
-      movieId,
-      nameRU,
-      nameEN,
-    } = await req.body;
-    const movie = await Movie.create({
-      country,
-      director,
-      duration,
-      year,
-      description,
-      image,
-      trailerLink,
-      thumbnail,
-      movieId,
-      nameRU,
-      nameEN,
-      owner: req.user._id,
-    });
+    const movie = await Movie.create({ ...req.body, owner: req.user._id });
     return res.status(CREATED).send(movie);
   } catch (err) {
     if (err.name === 'ValidationError') {
-      return next(new BadRequestError('Введены некорректные данные'));
+      return next(new BadRequestError(ValidationErrorMessage));
     }
     return next(err);
   }
@@ -66,12 +46,12 @@ const deleteMovie = async (req, res, next) => {
         await Movie.findByIdAndDelete(req.params.id);
         return res.status(OK).send(movie);
       }
-      return next(new ForbiddenError('У Вас нет прав на удаление этого фильма'));
+      return next(new ForbiddenError(ForbiddenErrorMessage));
     }
-    return next(new NotFoundError('Фильм не найден'));
+    return next(new NotFoundError(NotFoundMovieErrorMessage));
   } catch (err) {
     if (err.name === 'CastError') {
-      return next(new BadRequestError('Неверный запрос'));
+      return next(new BadRequestError(BadRequestErrorMessage));
     }
     return next(err);
   }
