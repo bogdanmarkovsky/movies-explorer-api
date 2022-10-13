@@ -24,7 +24,7 @@ movieRoutes.post('/', celebrate({
     thumbnail: Joi.string().required().custom(validateUrl),
     nameRU: Joi.string().required(),
     nameEN: Joi.string().required(),
-    movieId: Joi.string().required().custom(validateInt),
+    movieId: Joi.number().required().custom(validateInt),
   }),
 }), addMovie);
 movieRoutes.delete('/:id', celebrate({
