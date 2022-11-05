@@ -1,7 +1,7 @@
 const rateLimit = require('express-rate-limit');
 const {
   RateLimiterErrorMessage,
-} = require('./messages');
+} = require('../utils/messages');
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,

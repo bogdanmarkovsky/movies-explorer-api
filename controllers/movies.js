@@ -40,10 +40,10 @@ const addMovie = async (req, res, next) => {
 const deleteMovie = async (req, res, next) => {
   const id = req.user._id;
   try {
-    const movie = await Movie.findById(req.params.id);
+    const movie = await Movie.findOne({ owner: id, movieId: req.params.id });
     if (movie) {
       if (id === movie.owner.toString()) {
-        await Movie.findByIdAndDelete(req.params.id);
+        await movie.remove();
         return res.status(OK).send(movie);
       }
       return next(new ForbiddenError(ForbiddenErrorMessage));
